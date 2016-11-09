@@ -80,6 +80,10 @@ plugins, not just statsd.
 - [#2104](https://github.com/influxdata/telegraf/issues/2104): Add a global snmp translation cache.
 
 ## v1.1.1 [2016-11-14]
+## v1.1 [unreleased]
+- [#1949](https://github.com/influxdata/telegraf/issues/1949): Fix windows `net` plugin.
+
+## v1.1.1 [unreleased]
 
 ### Bugfixes
 
