@@ -18,7 +18,7 @@ github.com/eapache/queue ded5959c0d4e360646dc9e9908cff48666781367
 github.com/eclipse/paho.mqtt.golang 0f7a459f04f13a41b7ed752d47944528d4bf9a86
 github.com/go-sql-driver/mysql 1fca743146605a172a266e1654e01e5cd5669bee
 github.com/gobwas/glob 49571a1557cd20e6a2410adc6421f85b66c730b5
-github.com/golang/protobuf 552c7b9542c194800fd493123b3798ef0a832032
+github.com/golang/protobuf 62e782f47e4c57935994133e44f1716d281504e4
 github.com/golang/snappy d9eb7a3d35ec988b8585d4a0068e462c27d28380
 github.com/gorilla/context 1ea25387ff6f684839d82767c1733ff4d4d15d0a
 github.com/gorilla/mux c9e326e2bdec29039a3761c07bece13133863e1e
