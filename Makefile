@@ -96,7 +96,7 @@ vet:
 .PHONY: test test-short vet build default
 
 docker-build:
-	docker run -it -v $(shell pwd):/go/src/github.com/influxdata/telegraf
+	docker run -it -v $(shell pwd):/go/src/github.com/influxdata/telegraf \
 								 -w /go/src/github.com/influxdata/telegraf \
 								 golang:1.7.5-wheezy /bin/bash -c "make prepare; make build-for-docker"
 
