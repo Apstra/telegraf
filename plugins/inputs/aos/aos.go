@@ -199,6 +199,7 @@ func (ssl *streamAos) msgReader(r io.Reader) {
 
 			newIntCounter := newPerfMonData.GetInterfaceCounters()
 			newResourceCounter := newPerfMonData.GetSystemResourceCounters()
+			newGenericPerfMon := newPerfMonData.GetGeneric()
 
 			// ----------------------------------------------------------------
 			// Interface Counters
@@ -318,6 +319,61 @@ func (ssl *streamAos) msgReader(r io.Reader) {
 						ssl.Aos.Accumulator.AddFields(serie, fields, tags)
 					}
 				}
+			}
+
+			if newGenericPerfMon != nil {
+
+				serie := "perfmon_generic_undefined"
+				fields := make(map[string]interface{})
+				tags := ssl.GetTags( originName )
+
+				for _, t := range newGenericPerfMon.GetTags() {
+					  tName := t.GetName()
+						tValue := t.GetValue()
+
+						myValueOfName := reflect.ValueOf(tValue).Elem()
+						myType := myValueOfName.Type().String()
+
+						// Intercept the special tag "data_type"
+						if tName == "data_type" {
+							serie = t.GetStringValue()
+							continue
+						}
+
+						switch myType {
+						case "aos_streaming.Tag_StringValue":
+								// tNameStr := t.GetStringValue()
+								tags[tName] = t.GetStringValue()
+								//fmt.Printf("  tag - %v - %v\n", tName, tNameStr )
+						case "aos_streaming.Tag_FloatValue":
+								// tNameFloat := t.GetFloatValue()
+								log.Printf("W! Perfmon Generic - Tag can only be of type String, %v is type Float", tName)
+
+						case "aos_streaming.Tag_Int64Value":
+								// tNameInt := t.GetInt64Value()
+								log.Printf("W! Perfmon Generic - Tag can only be of type String, %v is type Int64", tName)
+						}
+				}
+				for _, f := range newGenericPerfMon.GetFields() {
+					fName := f.GetName()
+					fValue := f.GetValue()
+
+					myValueOfValue := reflect.ValueOf(fValue).Elem()
+					myType := myValueOfValue.Type().String()
+
+					switch myType {
+					case "aos_streaming.Field_FloatValue":
+						fields[fName] = f.GetFloatValue()
+					case "aos_streaming.Field_Int64Value":
+						fields[fName] =  f.GetInt64Value()
+					case "aos_streaming.Field_StringValue":
+						log.Printf("W! Perfmon Generic - Field %v can't be of type String, must be Float of Int64", fName)
+						// fields[fName] =  f.GetStringValue()
+							// fmt.Printf("  fields - %v - %v\n", fName, fValueStr )
+					}
+				}
+
+				ssl.Aos.Accumulator.AddFields(serie, fields, tags)
 			}
 		}
 
