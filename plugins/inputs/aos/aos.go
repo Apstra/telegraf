@@ -449,6 +449,7 @@ func (ssl *streamAos) msgReader(r io.Reader) {
 			}
 		}
 	}
+	log.Printf("D! TCP Session closed .. " )
 }
 
 // ----------------------------------------------------------------
