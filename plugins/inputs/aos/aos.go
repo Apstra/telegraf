@@ -1,3 +1,8 @@
+// Copyright 2014-present, Apstra, Inc. All rights reserved.
+//
+// This source code is licensed under End User License Agreement found in the
+// LICENSE file at http://www.apstra.com/community/eula
+
 package aos
 
 import (
@@ -444,6 +449,7 @@ func (ssl *streamAos) msgReader(r io.Reader) {
 			}
 		}
 	}
+	log.Printf("D! TCP Session closed .. " )
 }
 
 // ----------------------------------------------------------------
@@ -459,6 +465,7 @@ type Aos struct {
 	AosLogin				string
 	AosPassword 		string
 
+	RefreshInterval	int
 
 	api 				*aosrestapi.AosServerApi
 	telegraf.Accumulator
@@ -472,8 +479,23 @@ func (aos *Aos) Description() string {
 func (aos *Aos) SampleConfig() string {
 	return `
 
-  ## Maximum number of concurrent connections.
+		# TCP Port to listen for incoming sessions from the AOS Server
+	  port = 7777										# mandatory
 
+	  # Address of the server running Telegraf, it needs to be reacheable from AOS
+	  address = 192.168.59.1				# mandatory
+
+		# Interval to refresh content from the AOS server (in sec)
+		refresh_interval = 30					# Default 30
+
+	  # Streaming Type Can be "perfmon", "alerts" or "events"
+	  streaming_type = [ "events" ]
+
+	  # Define parameter to join the AOS Server using the REST API
+	  aos_server = 192.168.59.250		# mandatory
+	  aos_port = 8888								# Default 8888
+	  aos_login = admin							# Default admin
+	  aos_password = admin					# Default admin
 `
 }
 
@@ -576,10 +598,13 @@ func (aos *Aos) Stop() {
 	}
 }
 
-func newAos() *Aos {
-	return &Aos{}
-}
-
 func init() {
-	inputs.Add("aos", func() telegraf.Input { return newAos() })
+	inputs.Add("aos", func() telegraf.Input {
+		return &Aos{
+			RefreshInterval:	 	30,
+			AosPort: 						8888,
+			AosLogin:						"admin",
+			AosPassword: 				"admin",
+		}
+	})
 }
