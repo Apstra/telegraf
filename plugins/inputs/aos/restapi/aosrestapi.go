@@ -171,7 +171,6 @@ func NewAosServerApi (address string, port int, user string, password string) *A
 func (api *AosServerApi ) Login() (err error) {
 
   url := fmt.Sprintf("http://%v:%v/api/user/login", api.Address, api.Port)
-  // fmt.Println("Login() URL:>", url)
 
   var jsonStr = []byte(fmt.Sprintf(`{ "username": "%v", "password": "%v" }`, api.User, api.Password))
 
@@ -181,19 +180,19 @@ func (api *AosServerApi ) Login() (err error) {
 
   resp, err := client.Do(req)
   if err != nil {
-      panic(err)
+		return err
   }
+
   defer resp.Body.Close()
 
   if resp.StatusCode != 201 {
-    panic(resp.Status)
+		return errors.New(fmt.Sprintf("Status Code is not %v got %v", 201, resp.Status))
   }
 
   token := AosToken{}
   json.NewDecoder(resp.Body).Decode(&token)
 
   api.Token = token.Token
-  // fmt.Printf("Login() Token: %+v \n", token.Token)
 
   return nil
 }
