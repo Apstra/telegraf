@@ -95,13 +95,18 @@ vet:
 
 .PHONY: test test-short vet build default
 
+docker-cli:
+	docker run -it -v $(shell pwd):/go/src/github.com/influxdata/telegraf \
+								 -w /go/src/github.com/influxdata/telegraf \
+								 golang:1.7.5-wheezy /bin/bash
+
 docker-build:
-	docker run -it -v $(shell pwd):/go/src/github.com/influxdata/telegraf
+	docker run -it -v $(shell pwd):/go/src/github.com/influxdata/telegraf \
 								 -w /go/src/github.com/influxdata/telegraf \
 								 golang:1.7.5-wheezy /bin/bash -c "make prepare; make build-for-docker"
 
 apstra-docker-build:
-	docker build -t 10.1.2.21:5000/telegraf .
+	docker build -t apstra/telegraf .
 
 apstra-docker-publish:
-	docker push 10.1.2.21:5000/telegraf
+	docker push apstra/telegraf
