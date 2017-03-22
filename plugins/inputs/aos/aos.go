@@ -519,14 +519,19 @@ func (aos *Aos) RefreshData() {
 func (aos *Aos) Start(acc telegraf.Accumulator) error {
 	aos.Accumulator = acc
 
+	log.Printf("D! Starting input:aos, will connect to AOS server %v:%v ", aos.AosServer, aos.AosPort )
+
 	// --------------------------------------------
 	// Open Session to Rest API
 	// --------------------------------------------
 	aos.api = aosrestapi.NewAosServerApi(aos.AosServer, aos.AosPort, aos.AosLogin, aos.AosPassword)
 
 	err := aos.api.Login()
-	if err != nil { log.Printf("W! Error ", err)  }
-	log.Printf("I! Session to AOS server Opened on %v:%v", aos.AosServer, aos.AosPort )
+	if err != nil {
+		log.Printf("W! Error %+v", err)
+	} else {
+		log.Printf("I! Session to AOS server Opened on %v:%v", aos.AosServer, aos.AosPort )
+	}
 
 	// --------------------------------------------
 	// Collect Blueprint and System info
