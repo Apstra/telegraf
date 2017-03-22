@@ -508,10 +508,10 @@ func (aos *Aos) Gather(_ telegraf.Accumulator) error {
 func (aos *Aos) RefreshData() {
 
     for {
-      time.Sleep(30 * time.Second)
+      time.Sleep(aos.RefreshInterval * time.Second)
       aos.api.GetBlueprints()
       aos.api.GetSystems()
-      log.Printf("D! Finished to Refresh Data, will sleep for %v sec", 30)
+      log.Printf("D! Finished to Refresh Data, will sleep for %v sec", aos.RefreshInterval)
     }
 }
 
