@@ -12,8 +12,12 @@ import "encoding/json"
 import "net/http"
 import "io/ioutil"
 import "errors"
+import "crypto/tls"
 
-var client = &http.Client{Timeout: 10 * time.Second}
+var client = &http.Client{
+          Timeout: 10 * time.Second,
+          Transport: &http.Transport{
+              TLSClientConfig: &tls.Config{InsecureSkipVerify: true}}}
 
 type AosToken struct {
 	Token string
@@ -145,6 +149,7 @@ type AosServerApi  struct {
   Port        int
   User        string
   Password    string
+	Protocol		string
 
   Token       string
   Blueprints  map[string]aosBlueprintSummary
@@ -157,9 +162,10 @@ type apiResponseId struct{
     Id string
 }
 
-func NewAosServerApi (address string, port int, user string, password string) *AosServerApi  {
+func NewAosServerApi (address string, port int, user string, password string, protocol string) *AosServerApi  {
 
-    api := AosServerApi { Address: address, Port: port,User: user,Password: password}
+	  //TODO add check for protocol can only be http or https
+    api := AosServerApi { Address: address, Port: port,User: user,Password: password, Protocol: protocol}
 
     // initialize Maps
     api.Blueprints = make(map[string]aosBlueprintSummary, 20)
@@ -170,7 +176,7 @@ func NewAosServerApi (address string, port int, user string, password string) *A
 
 func (api *AosServerApi ) Login() (err error) {
 
-  url := fmt.Sprintf("http://%v:%v/api/user/login", api.Address, api.Port)
+  url := fmt.Sprintf("%v://%v:%v/api/user/login", api.Protocol, api.Address, api.Port)
 
   var jsonStr = []byte(fmt.Sprintf(`{ "username": "%v", "password": "%v" }`, api.User, api.Password))
 
@@ -199,7 +205,7 @@ func (api *AosServerApi ) Login() (err error) {
 
 func (api *AosServerApi ) httpRequest(httpType string, address string, v interface{}, expectedCode int) error {
 
-  url := fmt.Sprintf("http://%v:%v/api/%v", api.Address, api.Port, address)
+  url := fmt.Sprintf("%v://%v:%v/api/%v", api.Protocol, api.Address, api.Port, address)
 
   req, err := http.NewRequest(httpType, url, nil)
   req.Header.Set("Accept", "application/json")
@@ -231,7 +237,7 @@ func (api *AosServerApi) StopStreaming() error {
 
   for _, id := range api.StreamingSessions {
 
-    url := fmt.Sprintf("http://%v:%v/api/streaming-config/%v", api.Address, api.Port, id)
+    url := fmt.Sprintf("%v://%v:%v/api/streaming-config/%v", api.Protocol, api.Address, api.Port, id)
 
     req, err := http.NewRequest("DELETE", url,  nil)
     req.Header.Set("Accept", "application/json")
@@ -253,7 +259,7 @@ func (api *AosServerApi) StopStreaming() error {
 
 func (api *AosServerApi) StartStreaming(streamingType string, address string, port int) error {
 
-  url := fmt.Sprintf("http://%v:%v/api/streaming-config", api.Address, api.Port)
+  url := fmt.Sprintf("%v://%v:%v/api/streaming-config", api.Protocol, api.Address, api.Port)
 
   var jsonStr = []byte(fmt.Sprintf(`{
         "streaming_type": "%v",

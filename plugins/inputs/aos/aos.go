@@ -520,6 +520,7 @@ type Aos struct {
 	AosPort					int
 	AosLogin				string
 	AosPassword 		string
+	AosProtocol 		string
 
 	RefreshInterval	int
 
@@ -552,6 +553,7 @@ func (aos *Aos) SampleConfig() string {
 	  aos_port = 8888								# Default 8888
 	  aos_login = admin							# Default admin
 	  aos_password = admin					# Default admin
+		aos_protocol = https					# Default https
 `
 }
 
@@ -580,13 +582,13 @@ func (aos *Aos) Start(acc telegraf.Accumulator) error {
 	// --------------------------------------------
 	// Open Session to Rest API
 	// --------------------------------------------
-	aos.api = aosrestapi.NewAosServerApi(aos.AosServer, aos.AosPort, aos.AosLogin, aos.AosPassword)
+	aos.api = aosrestapi.NewAosServerApi(aos.AosServer, aos.AosPort, aos.AosLogin, aos.AosPassword, aos.AosProtocol)
 
 	err := aos.api.Login()
 	if err != nil {
 		log.Printf("W! Error %+v", err)
 	} else {
-		log.Printf("I! Session to AOS server Opened on %v:%v", aos.AosServer, aos.AosPort )
+		log.Printf("I! Session to AOS server Opened on %v://%v:%v", aos.AosProtocol, aos.AosServer, aos.AosPort )
 	}
 
 	// --------------------------------------------
@@ -663,7 +665,8 @@ func init() {
 	inputs.Add("aos", func() telegraf.Input {
 		return &Aos{
 			RefreshInterval:	 	30,
-			AosPort: 						8888,
+			AosPort: 						443,
+			AosProtocol:				"https",
 			AosLogin:						"admin",
 			AosPassword: 				"admin",
 		}
