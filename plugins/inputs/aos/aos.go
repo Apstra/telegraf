@@ -567,9 +567,14 @@ func (aos *Aos) RefreshData() {
 
     for {
       time.Sleep(time.Duration(aos.RefreshInterval) * time.Second)
+
+			// log.Printf("D! Will Collect Blueprints Information")
       aos.api.GetBlueprints()
+
+			// log.Printf("D! Will Collect Systems Information")
       aos.api.GetSystems()
-      log.Printf("D! Finished to Refresh Data, will sleep for %v sec", aos.RefreshInterval)
+
+			log.Printf("D! Finished to Refresh Data, will sleep for %v sec", aos.RefreshInterval)
     }
 }
 
