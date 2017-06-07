@@ -12,8 +12,12 @@ import "encoding/json"
 import "net/http"
 import "io/ioutil"
 import "errors"
+import "crypto/tls"
 
-var client = &http.Client{Timeout: 10 * time.Second}
+var client = &http.Client{
+          Timeout: 10 * time.Second,
+          Transport: &http.Transport{
+              TLSClientConfig: &tls.Config{InsecureSkipVerify: true}}}
 
 type AosToken struct {
 	Token string
@@ -24,28 +28,7 @@ type aosSystemList struct {
 }
 
 type aosBlueprintList struct {
-		Items				[]aosBlueprintSummary 	`json:"items"`
-}
-
-func (bplist *aosBlueprintList) GetSystemFromBp( bpId string, systemId string ) *aosBlueprintSystemNode {
-
-    // Search for Node based on Id on a specific Blueprint
-    for _, bp := range bplist.Items {
-      if bp.Id == bpId {
-        // fmt.Printf("Blueprint Find : %s \n", bp.Name)
-
-        for _, node := range bp.Content.System.Nodes {
-          // fmt.Printf("  Node : %s \n", node.Name)
-
-          if node.Id == systemId {
-            return &node
-          }
-        }
-      }
-    }
-
-    return nil
-
+		Items				[]aosBlueprint 	`json:"items"`
 }
 
 type aosSystem struct {
@@ -101,43 +84,37 @@ type aosSystemUserConfig struct {
 // 		Minor			int			`json:"minor"`
 // }
 
-type aosBlueprintSummary struct {
+type aosBlueprint struct {
 		Id		       string   `json:"id"`
 		ReferenceArchitecture	string `json:"reference_architecture"`
-    Name	       string   `json:"display_name"`
-    Content      aosBlueprintDetail
+    Name	       string   `json:"label"`
+    Systems      map[string]aosBlueprintSystemNode
 }
 
-type aosBlueprintDetail struct {
-		Id		        string  `json:"id"`
-		ReferenceArchitecture	string `json:"reference_architecture"`
-    Name	        string   `json:"display_name"`
-    System        aosBlueprintSystem  `json:"system"`
-}
-
+// --------------------------------------------------------------------------
+// Datastructure return by Query Engine Query for System Node in Blueprint
+// --------------------------------------------------------------------------
 type aosBlueprintSystem struct {
     Nodes         []aosBlueprintSystemNode
-    EdgeIpConnectivity  aosBlueprintSystemEdgeIp `json:"l3_edge_ip_connectivity_groups"`
 }
 
-
-type aosBlueprintSystemEdgeIp struct {
-    ExternalSubnets []interface{}   `json:"external_subnets"`
-    InternalSubnets []interface{}   `json:"internal_subnets"`
+type aosBlueprintSystemNodeList struct {
+    Items       []aosBlueprintSystemNodeItem  `json:"items"`
 }
 
+type aosBlueprintSystemNodeItem struct {
+  System        aosBlueprintSystemNode  `json:"system_node"`
+}
 
 type aosBlueprintSystemNode struct {
   Hostname        string  `json:"hostname"`
-  Name            string  `json:"display_name"`
-  LoopbackId      string  `json:"loopback_ip"`
+  Name            string  `json:"label"`
   Id              string  `json:"id"`
-  HclId           string  `json:"hcl_id"`
   Role            string  `json:"role"`
-  DeviceConfigRendering   string  `json:"device_config_rendering"`
   DeployMode      string  `json:"deploy_mode"`
-  Position        int  `json:"position"`
-  Asn             int     `json:"asn"`
+  Position        int     `json:"position"`
+  SystemId        string  `json:"system_id"`
+  Type            string  `json:"system_type"`
 }
 
 type AosServerApi  struct {
@@ -145,9 +122,10 @@ type AosServerApi  struct {
   Port        int
   User        string
   Password    string
+	Protocol		string
 
   Token       string
-  Blueprints  map[string]aosBlueprintSummary
+  Blueprints  map[string]aosBlueprint
   Systems     map[string]aosSystem
   StreamingSessions []string
 
@@ -157,20 +135,21 @@ type apiResponseId struct{
     Id string
 }
 
-func NewAosServerApi (address string, port int, user string, password string) *AosServerApi  {
+func NewAosServerApi (address string, port int, user string, password string, protocol string) *AosServerApi  {
 
-    api := AosServerApi { Address: address, Port: port,User: user,Password: password}
+	  //TODO add check for protocol can only be http or https
+    api := AosServerApi { Address: address, Port: port,User: user,Password: password, Protocol: protocol}
 
     // initialize Maps
-    api.Blueprints = make(map[string]aosBlueprintSummary, 20)
-    api.Systems = make(map[string]aosSystem, 100)
+    api.Blueprints = make(map[string]aosBlueprint, 20)
+    api.Systems = make(map[string]aosSystem, 1000)
 
     return &api
 }
 
 func (api *AosServerApi ) Login() (err error) {
 
-  url := fmt.Sprintf("http://%v:%v/api/user/login", api.Address, api.Port)
+  url := fmt.Sprintf("%v://%v:%v/api/user/login", api.Protocol, api.Address, api.Port)
 
   var jsonStr = []byte(fmt.Sprintf(`{ "username": "%v", "password": "%v" }`, api.User, api.Password))
 
@@ -197,11 +176,11 @@ func (api *AosServerApi ) Login() (err error) {
   return nil
 }
 
-func (api *AosServerApi ) httpRequest(httpType string, address string, v interface{}, expectedCode int) error {
+func (api *AosServerApi ) httpRequest(httpType string, address string, payload []byte, respData interface{}, expectedCode int) error {
 
-  url := fmt.Sprintf("http://%v:%v/api/%v", api.Address, api.Port, address)
+  url := fmt.Sprintf("%v://%v:%v/api/%v", api.Protocol, api.Address, api.Port, address)
 
-  req, err := http.NewRequest(httpType, url, nil)
+  req, err := http.NewRequest(httpType, url, bytes.NewBuffer(payload))
   req.Header.Set("Accept", "application/json")
   req.Header.Set("Content-Type", "application/json")
   req.Header.Set("AUTHTOKEN", api.Token)
@@ -221,7 +200,7 @@ func (api *AosServerApi ) httpRequest(httpType string, address string, v interfa
   body, err := ioutil.ReadAll(resp.Body)
   if err != nil { return err  }
 
-  err = json.Unmarshal(body, v)
+  err = json.Unmarshal(body, respData)
   if err != nil {  return err }
 
   return nil
@@ -231,7 +210,7 @@ func (api *AosServerApi) StopStreaming() error {
 
   for _, id := range api.StreamingSessions {
 
-    url := fmt.Sprintf("http://%v:%v/api/streaming-config/%v", api.Address, api.Port, id)
+    url := fmt.Sprintf("%v://%v:%v/api/streaming-config/%v", api.Protocol, api.Address, api.Port, id)
 
     req, err := http.NewRequest("DELETE", url,  nil)
     req.Header.Set("Accept", "application/json")
@@ -253,7 +232,7 @@ func (api *AosServerApi) StopStreaming() error {
 
 func (api *AosServerApi) StartStreaming(streamingType string, address string, port int) error {
 
-  url := fmt.Sprintf("http://%v:%v/api/streaming-config", api.Address, api.Port)
+  url := fmt.Sprintf("%v://%v:%v/api/streaming-config", api.Protocol, api.Address, api.Port)
 
   var jsonStr = []byte(fmt.Sprintf(`{
         "streaming_type": "%v",
@@ -289,37 +268,56 @@ func (api *AosServerApi) StartStreaming(streamingType string, address string, po
 func (api *AosServerApi ) GetBlueprints() error {
 
   blueprintList := aosBlueprintList{}
-  err := api.httpRequest("GET", "blueprints", &blueprintList, 200)
+  err := api.httpRequest("GET", "blueprints", nil, &blueprintList, 200)
   if err != nil { return err }
 
   // Save all items in the API Object by ID
   for i := 0; i < len(blueprintList.Items); i++ {
 
     id := blueprintList.Items[i].Id
-    // fmt.Printf("GetBlueprints() - Id %v \n", id )
+    fmt.Printf("GetBlueprints() - Id %v \n", id )
 
-    api.Blueprints[id] = blueprintList.Items[i]
+    // Create Blueprint from JSON value returned by API
+    // Initialize list of map of Systems to be queried later by Query Engine
+    //   Not possible to assign a field inside a struct directly in if part of a map
+    //   Must save same stuct temporarely
+    b := blueprintList.Items[i]
+    b.Systems = make(map[string]aosBlueprintSystemNode, 1000)
+    api.Blueprints[id] = b
 
     // fmt.Printf("Id: %s - %s\n", api.Blueprints[id].Id, api.Blueprints[id].Name )
 
-    // Not possible to assign a field inside a struct directly in if part of a map
-    // Must same stuct temporarely
-    tmp := api.Blueprints[id]
+    // Get list of system in the blueprint with Separate Query
+    tmp, systemErr := api.GetSystemsInBlueprint(id)
+    if err != nil { fmt.Printf("Issue while trying to GetSystemsInBlueprint  %s\n", systemErr ) }
 
-    err = api.httpRequest("GET", "blueprints/" + api.Blueprints[id].Id, &tmp.Content , 200)
-    if err != nil { return err }
-
-    api.Blueprints[id] = tmp
+    for y := 0; y < len(tmp.Items); y++ {
+      systemId := tmp.Items[y].System.Name
+      // fmt.Printf("  System: %s - %s\n", tmp.Items[y].System.Name, tmp.Items[y].System.Role )
+      api.Blueprints[id].Systems[systemId] = tmp.Items[y].System
+    }
   }
 
   return nil
 }
 
+func (api *AosServerApi ) GetSystemsInBlueprint( blueprintId string ) (*aosBlueprintSystemNodeList, error) {
+
+  systemBpList := aosBlueprintSystemNodeList{}
+  var jsonStr = []byte(fmt.Sprintf(`{ "query": "match(node('system', name='system_node'))" }`))
+
+  err := api.httpRequest("POST", "blueprints/" + blueprintId + "/qe", jsonStr, &systemBpList , 200)
+  if err != nil { return nil, err }
+
+  return &systemBpList, nil
+}
+
+
 func (api *AosServerApi ) GetSystems() error {
 
   systemList := aosSystemList{}
 
-  err := api.httpRequest("GET", "systems", &systemList, 200)
+  err := api.httpRequest("GET", "systems", nil, &systemList, 200)
   if err != nil { return err }
 
   for _, system := range systemList.Items {
@@ -335,11 +333,11 @@ func (api *AosServerApi ) GetSystems() error {
       if bp, ok := api.Blueprints[system.Status.BlueprintId]; ok {
         var found bool
 
-        for _, node := range bp.Content.System.Nodes {
+        for _, node := range bp.Systems {
 
           // fmt.Printf("GetSystems() node - Id %v \n", node.Id )
-          //
-          if node.Id == id  {
+
+          if node.SystemId == id  {
             s.Blueprint = node
             api.Systems[id] = s
             found = true
