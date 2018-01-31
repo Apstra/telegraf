@@ -289,7 +289,7 @@ func (api *AosServerApi ) GetBlueprints() error {
 
     // Get list of system in the blueprint with Separate Query
     tmp, systemErr := api.GetSystemsInBlueprint(id)
-    if err != nil { fmt.Printf("Issue while trying to GetSystemsInBlueprint  %s\n", systemErr ) }
+    if systemErr != nil { fmt.Printf("Issue while trying to GetSystemsInBlueprint  %s\n", systemErr ) }
 
     for y := 0; y < len(tmp.Items); y++ {
       systemId := tmp.Items[y].System.Name
