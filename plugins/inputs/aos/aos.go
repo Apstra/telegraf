@@ -426,6 +426,12 @@ func (ssl *streamAos) msgReader(r io.Reader) {
 			case "mlag_state":
 					myEventData := newEvent.GetMlagState()
 					ssl.extractEventData( eventTypeName, tags, myEventData)
+			case "extensible_event":
+					myEventData := newEvent.GetExtensibleEvent()
+					ssl.extractEventData( eventTypeName, tags, myEventData)
+			case "route_state":
+					myEventData := newEvent.GetRouteState()
+					ssl.extractEventData( eventTypeName, tags, myEventData)
 
 			default:
 				log.Printf("W! Event Type - %s, not supported yet", eventTypeName)
@@ -495,6 +501,15 @@ func (ssl *streamAos) msgReader(r io.Reader) {
 					ssl.extractAlertData(alertTypeName, tags, myAlertData, raise)
 			case "mlag_alert":
 					myAlertData := newAlert.GetMlagAlert()
+					ssl.extractAlertData(alertTypeName, tags, myAlertData, raise)
+			case "probe_alert":
+					myAlertData := newAlert.GetProbeAlert()
+					ssl.extractAlertData(alertTypeName, tags, myAlertData, raise)
+			case "config_mismatch_alert":
+					myAlertData := newAlert.GetConfigMismatchAlert()
+					ssl.extractAlertData(alertTypeName, tags, myAlertData, raise)
+			case "extensible_alert":
+					myAlertData := newAlert.GetExtensibleAlert()
 					ssl.extractAlertData(alertTypeName, tags, myAlertData, raise)
 			case "test_alert":
 					myAlertData := newAlert.GetTestAlert()
