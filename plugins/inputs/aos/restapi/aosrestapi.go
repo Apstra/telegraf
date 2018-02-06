@@ -8,6 +8,7 @@ package aosrestapi
 import "fmt"
 import "time"
 import "bytes"
+import "sync"
 import "encoding/json"
 import "net/http"
 import "io/ioutil"
@@ -125,10 +126,11 @@ type AosServerApi  struct {
 	Protocol		string
 
   Token       string
+
+  sync.RWMutex // following fields are protected by this lock
   Blueprints  map[string]aosBlueprint
   Systems     map[string]aosSystem
   StreamingSessions []string
-
 }
 
 type apiResponseId struct{
@@ -259,6 +261,9 @@ func (api *AosServerApi) StartStreaming(streamingType string, address string, po
 
   json.NewDecoder(resp.Body).Decode(&stramingResp)
 
+  api.Lock()
+  defer api.Unlock()
+
   api.StreamingSessions = append(api.StreamingSessions, stramingResp.Id)
   // fmt.Printf("Created Streaming Session : %v\n", stramingResp.Id)
 
@@ -270,6 +275,9 @@ func (api *AosServerApi ) GetBlueprints() error {
   blueprintList := aosBlueprintList{}
   err := api.httpRequest("GET", "blueprints", nil, &blueprintList, 200)
   if err != nil { return err }
+
+  api.Lock()
+  defer api.Unlock()
 
   // Save all items in the API Object by ID
   for i := 0; i < len(blueprintList.Items); i++ {
@@ -289,7 +297,10 @@ func (api *AosServerApi ) GetBlueprints() error {
 
     // Get list of system in the blueprint with Separate Query
     tmp, systemErr := api.GetSystemsInBlueprint(id)
-    if systemErr != nil { fmt.Printf("Issue while trying to GetSystemsInBlueprint  %s\n", systemErr ) }
+    if systemErr != nil {
+      fmt.Printf("Issue while trying to GetSystemsInBlueprint  %s\n", systemErr )
+      continue
+    }
 
     for y := 0; y < len(tmp.Items); y++ {
       systemId := tmp.Items[y].System.Name
@@ -320,6 +331,9 @@ func (api *AosServerApi ) GetSystems() error {
   err := api.httpRequest("GET", "systems", nil, &systemList, 200)
   if err != nil { return err }
 
+  api.Lock()
+  defer api.Unlock()
+
   for _, system := range systemList.Items {
 
     id := system.Id
@@ -339,15 +353,19 @@ func (api *AosServerApi ) GetSystems() error {
 
           if node.SystemId == id  {
             s.Blueprint = node
-            api.Systems[id] = s
             found = true
+            break
           }
         }
         if found == false {
-          return errors.New(fmt.Sprintf("System %v has Blueprint ID defined (%v) but was not able to find it in System.Nodes", id, system.Status.BlueprintId))
+          return errors.New(fmt.Sprintf(
+            "System %v has Blueprint ID defined (%v) but was not able to find it in System.Nodes",
+            id, system.Status.BlueprintId))
         }
       } else {
-        return errors.New(fmt.Sprintf("System %v has Blueprint ID defined (%v) but not blueprint with this is exist in map", id, system.Status.BlueprintId))
+        return errors.New(fmt.Sprintf(
+          "System %v has Blueprint ID defined (%v) but no blueprint with this id exist in map",
+          id, system.Status.BlueprintId))
       }
     }
   }
@@ -356,12 +374,26 @@ func (api *AosServerApi ) GetSystems() error {
 
 func (api *AosServerApi ) GetSystemByKey( deviceKey string ) *aosSystem {
 
-    for _, system := range api.Systems {
+  api.RLock()
+  defer api.RUnlock()
 
-      if system.DeviceKey == deviceKey {
-        return &system
-      }
-    }
+  system, ok := api.Systems[deviceKey]
+  if ok {
+    return &system_node
+  }
 
-    return nil
+  return nil
+}
+
+func (api *AosServerApi ) GetBlueprintById( blueprintId string ) *aosBlueprint {
+
+  api.RLock()
+  defer api.RUnlock()
+
+  blueprint, ok := api.Blueprints[blueprintId]
+  if ok {
+    return &blueprint
+  }
+
+  return nil
 }
