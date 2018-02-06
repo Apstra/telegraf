@@ -1,7 +1,7 @@
 # AOS Listener
 
 ### Support 
-This plugin is **experimental** and only supports AOS version 2.0.
+This plugin only supports AOS version 2.0.
 
 ### Overview
 Input Plugins for Apstra AOS Telemetry Streaming
