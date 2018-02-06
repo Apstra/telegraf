@@ -353,6 +353,7 @@ func (api *AosServerApi ) GetSystems() error {
 
           if node.SystemId == id  {
             s.Blueprint = node
+            api.Systems[id] = s
             found = true
             break
           }
