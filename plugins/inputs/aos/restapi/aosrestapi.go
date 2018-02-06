@@ -379,7 +379,7 @@ func (api *AosServerApi ) GetSystemByKey( deviceKey string ) *aosSystem {
 
   system, ok := api.Systems[deviceKey]
   if ok {
-    return &system_node
+    return &system
   }
 
   return nil
