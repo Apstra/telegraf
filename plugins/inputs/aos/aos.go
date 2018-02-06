@@ -132,7 +132,8 @@ func (ssl *streamAos) GetTags(deviceKey string) map[string]string {
 		}
 
 		if system.Status.BlueprintId != "" {
-			tags["blueprint"] = ssl.Aos.api.Blueprints[system.Status.BlueprintId].Name
+			blueprint := ssl.Aos.api.GetBlueprintById(system.Status.BlueprintId)
+			if blueprint != nil { tags["blueprint"] = blueprint.Name }
 		}
 
 		if system.Blueprint.Name != "" {
@@ -177,6 +178,7 @@ func (ssl *streamAos) msgReader(r io.Reader) {
 
 		if err != nil {
 			log.Printf("W! Reading message failed: ", err)
+			return
 		}
 
 		// Create new aos_streaming.AosMessage and deserialize protobuf
@@ -185,6 +187,7 @@ func (ssl *streamAos) msgReader(r io.Reader) {
 
 		if err != nil {
 			log.Printf("W! Error unmarshaling: ", err)
+			return
 		}
 
 		// ----------------------------------------------------------------
@@ -426,6 +429,12 @@ func (ssl *streamAos) msgReader(r io.Reader) {
 			case "mlag_state":
 					myEventData := newEvent.GetMlagState()
 					ssl.extractEventData( eventTypeName, tags, myEventData)
+			case "extensible_event":
+					myEventData := newEvent.GetExtensibleEvent()
+					ssl.extractEventData( eventTypeName, tags, myEventData)
+			case "route_state":
+					myEventData := newEvent.GetRouteState()
+					ssl.extractEventData( eventTypeName, tags, myEventData)
 
 			default:
 				log.Printf("W! Event Type - %s, not supported yet", eventTypeName)
@@ -495,6 +504,15 @@ func (ssl *streamAos) msgReader(r io.Reader) {
 					ssl.extractAlertData(alertTypeName, tags, myAlertData, raise)
 			case "mlag_alert":
 					myAlertData := newAlert.GetMlagAlert()
+					ssl.extractAlertData(alertTypeName, tags, myAlertData, raise)
+			case "probe_alert":
+					myAlertData := newAlert.GetProbeAlert()
+					ssl.extractAlertData(alertTypeName, tags, myAlertData, raise)
+			case "config_mismatch_alert":
+					myAlertData := newAlert.GetConfigMismatchAlert()
+					ssl.extractAlertData(alertTypeName, tags, myAlertData, raise)
+			case "extensible_alert":
+					myAlertData := newAlert.GetExtensibleAlert()
 					ssl.extractAlertData(alertTypeName, tags, myAlertData, raise)
 			case "test_alert":
 					myAlertData := newAlert.GetTestAlert()
@@ -574,7 +592,7 @@ func (aos *Aos) RefreshData() {
 			// log.Printf("D! Will Collect Systems Information")
       aos.api.GetSystems()
 
-			log.Printf("D! Finished to Refresh Data, will sleep for %v sec", aos.RefreshInterval)
+      log.Printf("D! Finished to Refresh Data, will sleep for %v sec", aos.RefreshInterval)
     }
 }
 
@@ -600,10 +618,10 @@ func (aos *Aos) Start(acc telegraf.Accumulator) error {
 	// Collect Blueprint and System info
 	// --------------------------------------------
 	err = aos.api.GetBlueprints()
-	if err != nil {  log.Printf("W! Error ", err)  }
+	if err != nil {  log.Printf("W! Error fetching GetBlueprints ", err)  }
 
 	err = aos.api.GetSystems()
-	if err != nil {  log.Printf("W! Error ", err)  }
+	if err != nil {  log.Printf("W! Error fetching GetSystems ", err)  }
 
 	for _, system := range aos.api.Systems {
 
