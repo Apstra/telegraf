@@ -1,16 +1,16 @@
 # AOS Listener
 
-### Support 
+## Support 
 This plugin only supports AOS version 2.0.
 
-### Overview
+## Overview
 Input Plugins for Apstra AOS Telemetry Streaming
  - Configure Streaming Session on AOS Server
- - Liston on TCP Port and decode AOS GPB
+ - Listen on TCP Port and decode AOS GPB
  - Construct Time Series Information
  - Collect Additional info from AOS over REST API
 
-### Configuration
+## Configuration
 ```
 [[inputs.aos]]
   # TCP Port to listen for incoming sessions from the AOS Server
