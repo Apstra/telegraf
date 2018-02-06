@@ -178,6 +178,7 @@ func (ssl *streamAos) msgReader(r io.Reader) {
 
 		if err != nil {
 			log.Printf("W! Reading message failed: ", err)
+			return
 		}
 
 		// Create new aos_streaming.AosMessage and deserialize protobuf
@@ -186,6 +187,7 @@ func (ssl *streamAos) msgReader(r io.Reader) {
 
 		if err != nil {
 			log.Printf("W! Error unmarshaling: ", err)
+			return
 		}
 
 		// ----------------------------------------------------------------
