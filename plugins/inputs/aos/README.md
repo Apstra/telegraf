@@ -31,3 +31,6 @@ Input Plugins for Apstra AOS Telemetry Streaming
   aos_login = admin             # Default admin
   aos_password = admin          # Default admin
 ```
+
+## Disclaimer
+WARNING: This plugin is experimental and should not be used in production.
