@@ -61,6 +61,9 @@ func (ssl *streamAos) extractEventData(eventType string, tags map[string]string,
 
 	for i := 0; i < myEventDataValue.NumField(); i++ {
 		myField := myEventDataValue.Field(i)
+		if (myField.IsNil()) {
+			continue
+		}
 		field_name := propDataType.Prop[i].OrigName
 
 		// Skip field with XXX_
@@ -95,6 +98,9 @@ func (ssl *streamAos) extractAlertData(alertType string, tags map[string]string,
 
 	for i := 0; i < myAlertDataValue.NumField(); i++ {
 		myField := myAlertDataValue.Field(i)
+		if (myField.IsNil()) {
+			continue
+		}
 		field_name := propDataType.Prop[i].OrigName
 
 		// Skip field with XXX_
