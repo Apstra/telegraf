@@ -159,7 +159,7 @@ func (ssl *streamAos) msgReader(r io.Reader) {
 		sizeBuf, err := ioutil.ReadAll(sizeReader)
 
 		if err != nil {
-			log.Printf("W! Reading Size failed: ", err)
+			log.Printf("W! Reading Size failed: %v", err)
 			return
 		}
 
@@ -169,7 +169,7 @@ func (ssl *streamAos) msgReader(r io.Reader) {
 			&msgSize)
 
 		if err != nil {
-			log.Printf("W! binary.Read failed: ", err)
+			log.Printf("W! binary.Read failed: %v", err)
 			return
 		}
 
@@ -177,7 +177,7 @@ func (ssl *streamAos) msgReader(r io.Reader) {
 		msgBuf, err := ioutil.ReadAll(msgReader)
 
 		if err != nil {
-			log.Printf("W! Reading message failed: ", err)
+			log.Printf("W! Reading message failed: %v", err)
 			return
 		}
 
@@ -186,7 +186,7 @@ func (ssl *streamAos) msgReader(r io.Reader) {
 		err = proto.Unmarshal(msgBuf, newMsg)
 
 		if err != nil {
-			log.Printf("W! Error unmarshaling: ", err)
+			log.Printf("W! Error unmarshaling: %v", err)
 			return
 		}
 
@@ -523,7 +523,6 @@ func (ssl *streamAos) msgReader(r io.Reader) {
 			}
 		}
 	}
-	log.Printf("D! TCP Session closed .. " )
 }
 
 // ----------------------------------------------------------------
@@ -618,10 +617,10 @@ func (aos *Aos) Start(acc telegraf.Accumulator) error {
 	// Collect Blueprint and System info
 	// --------------------------------------------
 	err = aos.api.GetBlueprints()
-	if err != nil {  log.Printf("W! Error fetching GetBlueprints ", err)  }
+	if err != nil {  log.Printf("W! Error fetching GetBlueprints: %v", err)  }
 
 	err = aos.api.GetSystems()
-	if err != nil {  log.Printf("W! Error fetching GetSystems ", err)  }
+	if err != nil {  log.Printf("W! Error fetching GetSystems: %v", err)  }
 
 	for _, system := range aos.api.Systems {
 
