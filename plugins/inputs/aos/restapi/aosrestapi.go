@@ -54,7 +54,7 @@ type aosSystemFacts struct {
 		OsFamily			string		`json:"os_family"`
 		OsVersion			string		`json:"os_version"`
 		// OsVersionInfo aosSystemVersionInfo	`json:"os_version_info"`
-		SerialNumber  string		`json: "serial_number"`
+		SerialNumber  string		`json:"serial_number"`
 		Vendor			  string		`json:"vendor"`
 }
 

@@ -61,6 +61,9 @@ func (ssl *streamAos) extractEventData(eventType string, tags map[string]string,
 
 	for i := 0; i < myEventDataValue.NumField(); i++ {
 		myField := myEventDataValue.Field(i)
+		if (myField.IsNil()) {
+			continue
+		}
 		field_name := propDataType.Prop[i].OrigName
 
 		// Skip field with XXX_
@@ -95,6 +98,9 @@ func (ssl *streamAos) extractAlertData(alertType string, tags map[string]string,
 
 	for i := 0; i < myAlertDataValue.NumField(); i++ {
 		myField := myAlertDataValue.Field(i)
+		if (myField.IsNil()) {
+			continue
+		}
 		field_name := propDataType.Prop[i].OrigName
 
 		// Skip field with XXX_
@@ -159,7 +165,7 @@ func (ssl *streamAos) msgReader(r io.Reader) {
 		sizeBuf, err := ioutil.ReadAll(sizeReader)
 
 		if err != nil {
-			log.Printf("W! Reading Size failed: ", err)
+			log.Printf("W! Reading Size failed: %v", err)
 			return
 		}
 
@@ -169,7 +175,7 @@ func (ssl *streamAos) msgReader(r io.Reader) {
 			&msgSize)
 
 		if err != nil {
-			log.Printf("W! binary.Read failed: ", err)
+			log.Printf("W! binary.Read failed: %v", err)
 			return
 		}
 
@@ -177,7 +183,7 @@ func (ssl *streamAos) msgReader(r io.Reader) {
 		msgBuf, err := ioutil.ReadAll(msgReader)
 
 		if err != nil {
-			log.Printf("W! Reading message failed: ", err)
+			log.Printf("W! Reading message failed: %v", err)
 			return
 		}
 
@@ -186,7 +192,7 @@ func (ssl *streamAos) msgReader(r io.Reader) {
 		err = proto.Unmarshal(msgBuf, newMsg)
 
 		if err != nil {
-			log.Printf("W! Error unmarshaling: ", err)
+			log.Printf("W! Error unmarshaling: %v", err)
 			return
 		}
 
@@ -523,7 +529,6 @@ func (ssl *streamAos) msgReader(r io.Reader) {
 			}
 		}
 	}
-	log.Printf("D! TCP Session closed .. " )
 }
 
 // ----------------------------------------------------------------
@@ -618,10 +623,10 @@ func (aos *Aos) Start(acc telegraf.Accumulator) error {
 	// Collect Blueprint and System info
 	// --------------------------------------------
 	err = aos.api.GetBlueprints()
-	if err != nil {  log.Printf("W! Error fetching GetBlueprints ", err)  }
+	if err != nil {  log.Printf("W! Error fetching GetBlueprints: %v", err)  }
 
 	err = aos.api.GetSystems()
-	if err != nil {  log.Printf("W! Error fetching GetSystems ", err)  }
+	if err != nil {  log.Printf("W! Error fetching GetSystems: %v", err)  }
 
 	for _, system := range aos.api.Systems {
 
