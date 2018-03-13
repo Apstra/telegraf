@@ -103,8 +103,9 @@ func (ssl *streamAos) extractAlertData(alertType string, tags map[string]string,
 		}
 		field_name := propDataType.Prop[i].OrigName
 
-		// Skip field with XXX_
-		if strings.Contains(field_name, "XXX_") {	continue }
+		// Skip field with XXX_ and empty strings
+		if (field_name == "") { continue }
+		if strings.Contains(field_name, "XXX_") { continue }
 
 		if propDataType.Prop[i].Enum != "" {
 			field_value := fmt.Sprintf("%v", myField.Elem().Interface().(fmt.Stringer).String() )
