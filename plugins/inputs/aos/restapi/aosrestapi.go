@@ -253,7 +253,9 @@ func (api *AosServerApi) StartStreaming(streamingType string, address string, po
 
   defer resp.Body.Close()
 
-  if resp.StatusCode != 201 {
+  if resp.StatusCode == 409 {
+    return errors.New(fmt.Sprintf("%v : Endpoint already exist", resp.Status))
+  } else if resp.StatusCode != 201 {
     panic(resp.Status)
   }
 
