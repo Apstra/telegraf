@@ -167,14 +167,14 @@ func (ssl *StreamAos) ExtractProbeData(newProbeMessage interface{}, originName s
 	tags := ssl.GetTags( originName )
 
 	for i := 0; i < myValue.NumField(); i++ {
-			myField := myValue.Field(i)
-			field_name := propType.Prop[i].OrigName
+		myField := myValue.Field(i)
+		field_name := propType.Prop[i].OrigName
 
-			if strings.Contains(field_name, "XXX_") {	continue	}
+		if strings.Contains(field_name, "XXX_") { continue }
 
-			temp := reflect.Indirect(myField)
-			if temp == reflect.ValueOf(nil) { continue }
-			fields[field_name] = temp.Interface()
+		temp := reflect.Indirect(myField)
+		if temp == reflect.ValueOf(nil) { continue }
+		fields[field_name] = temp.Interface()
 	}
 
 	ssl.Aos.Accumulator.AddFields(serie, fields, tags)
@@ -204,8 +204,8 @@ func (ssl *StreamAos) MsgReader(r io.Reader) {
 			return
 		}
 
-		MsgReader := io.LimitReader(r, int64(msgSize))
-		msgBuf, err := ioutil.ReadAll(MsgReader)
+		IoMsgReader := io.LimitReader(r, int64(msgSize))
+		msgBuf, err := ioutil.ReadAll(IoMsgReader)
 
 		if err != nil {
 			log.Printf("W! Reading message failed: %v", err)
@@ -364,26 +364,6 @@ func (ssl *StreamAos) MsgReader(r io.Reader) {
 
 			if newProbeMessage != nil {
 				ssl.ExtractProbeData( newProbeMessage, originName)
-				// Prepare value. type and property
-				// myValue := reflect.ValueOf(newProbeMessage).Elem()
-				// myType := myValue.Type()
-				// propType := proto.GetProperties(myType)
-
-				// serie := "probe_message"
-				// fields := make(map[string]interface{})
-				// tags := ssl.GetTags( originName )
-
-				// for i := 0; i < myValue.NumField(); i++ {
-
-				// 		myField := myValue.Field(i)
-				// 		field_name := propType.Prop[i].OrigName
-
-				// 		if strings.Contains(field_name, "XXX_") {	continue	}
-
-				// 		fields[field_name] = reflect.Indirect(myField).Interface()
-				// }
-
-				// ssl.Aos.Accumulator.AddFields(serie, fields, tags)
 			}
 
 			if newGenericPerfMon != nil {
