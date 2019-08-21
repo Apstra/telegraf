@@ -1,7 +1,10 @@
 # AOS Listener
 
+## Disclaimer
+WARNING: This plugin is experimental and should not be used in production.
+
 ## Support 
-This plugin supports AOS up to version 2.2.
+This plugin supports AOS up to version 3.1.0.
 
 ## Overview
 Input Plugins for Apstra AOS Telemetry Streaming
@@ -32,5 +35,3 @@ Input Plugins for Apstra AOS Telemetry Streaming
   aos_password = admin          # Default admin
 ```
 
-## Disclaimer
-WARNING: This plugin is experimental and should not be used in production.
